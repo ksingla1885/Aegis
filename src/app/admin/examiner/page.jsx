@@ -168,8 +168,7 @@ export default function ExaminerStudioPage() {
     registerCustomExam(paperPayload);
     await publishExamPaper(paperPayload);
 
-    const encoded = encodePaperPayload(paperPayload);
-    const fullUrl = `${window.location.origin}/public-test/${token}?p=${encoded}`;
+    const fullUrl = `${window.location.origin}/public-test/${token}`;
     setCreatedExamResult({
       token,
       url: fullUrl,
