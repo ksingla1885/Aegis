@@ -53,6 +53,18 @@ export default function ExaminerStudioPage() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [audioEnvironmentMode, setAudioEnvironmentMode] = useState('CLASSROOM_LAB_MODE'); // 'QUIET_ROOM' | 'CLASSROOM_LAB_MODE' | 'DISABLED'
 
+  const handleAuthenticate = () => {
+    sessionStorage.setItem('aegis_examiner_authed', 'true');
+    sessionStorage.setItem('aegis_admin_authed', 'true');
+    setIsAuthenticated(true);
+  };
+
+  const handleLockSession = () => {
+    sessionStorage.removeItem('aegis_examiner_authed');
+    sessionStorage.removeItem('aegis_admin_authed');
+    setIsAuthenticated(false);
+  };
+
   React.useEffect(() => {
     setMounted(true);
     if (typeof window !== 'undefined') {

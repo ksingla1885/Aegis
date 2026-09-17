@@ -136,6 +136,18 @@ export default function ProctorDeskPage() {
   const [warningMessage, setWarningMessage] = useState('');
   const [actionNotice, setActionNotice] = useState(null);
 
+  const handleAuthenticate = () => {
+    sessionStorage.setItem('aegis_proctor_authed', 'true');
+    sessionStorage.setItem('aegis_admin_authed', 'true');
+    setIsAuthenticated(true);
+  };
+
+  const handleLockDesk = () => {
+    sessionStorage.removeItem('aegis_proctor_authed');
+    sessionStorage.removeItem('aegis_admin_authed');
+    setIsAuthenticated(false);
+  };
+
   React.useEffect(() => {
     setMounted(true);
     if (typeof window !== 'undefined') {
