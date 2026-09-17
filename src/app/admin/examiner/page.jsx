@@ -2,31 +2,37 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Shield, Plus, Upload, CheckCircle2, Copy, Sparkles, Sliders, FileText, ArrowLeft, Globe } from 'lucide-react';
+import { Building2, Shield, Plus, Upload, CheckCircle2, Copy, Sparkles, Sliders, FileText, ArrowLeft, Globe, Lock } from 'lucide-react';
 import { registerCustomExam } from '@/lib/mockData';
-
+import { publishExamPaper } from '@/lib/examService';
 import { AuthGateModal } from '@/components/security/AuthGateModal';
-import { Lock } from 'lucide-react';
 
 export default function ExaminerStudioPage() {
   const router = useRouter();
 
+  const [mounted, setMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   React.useEffect(() => {
+    setMounted(true);
     if (typeof window !== 'undefined') {
-      const isAuthed = sessionStorage.getItem('aegis_examiner_authed') === 'true';
+      const isAuthed = sessionStorage.getItem('aegis_examiner_authed') === 'true' ||
+                       sessionStorage.getItem('aegis_admin_authed') === 'true';
       setIsAuthenticated(isAuthed);
     }
   }, []);
 
+  if (!mounted) return null;
+
   const handleAuthenticate = () => {
     sessionStorage.setItem('aegis_examiner_authed', 'true');
+    sessionStorage.setItem('aegis_admin_authed', 'true');
     setIsAuthenticated(true);
   };
 
   const handleLockSession = () => {
     sessionStorage.removeItem('aegis_examiner_authed');
+    sessionStorage.removeItem('aegis_admin_authed');
     setIsAuthenticated(false);
   };
 
@@ -46,7 +52,7 @@ export default function ExaminerStudioPage() {
   const [allowCalculator, setAllowCalculator] = useState(true);
   const [maxViolationsAllowed, setMaxViolationsAllowed] = useState(3);
 
-  // Simple Question List State
+  // Question List State
   const [questions, setQuestions] = useState([
     {
       id: 'q1',
@@ -83,7 +89,7 @@ export default function ExaminerStudioPage() {
       setMaxViolationsAllowed(2);
     } else if (profile === 'CLASSROOM_LAB') {
       setEnableWebcamAI(true);
-      setEnableAudioAnalyzer(false); // Turned off for 30-50 student lab exams to prevent false ambient alerts
+      setEnableAudioAnalyzer(false);
       setAudioEnvironmentMode('DISABLED');
       setEnforceFullscreen(true);
       setAllowCalculator(true);
@@ -104,7 +110,6 @@ export default function ExaminerStudioPage() {
       setMaxViolationsAllowed(5);
     }
   };
-
 
   const handleAddQuestion = () => {
     const nextIdx = questions.length + 1;
@@ -148,7 +153,7 @@ export default function ExaminerStudioPage() {
       securityPolicy: {
         enableWebcamAI,
         enableAudioAnalyzer,
-        audioEnvironmentMode, // 'QUIET_ROOM' | 'CLASSROOM_LAB_MODE' | 'DISABLED'
+        audioEnvironmentMode,
         enforceFullscreen,
         allowCalculator,
         watermarkType: 'TILED_HASH',
@@ -162,14 +167,7 @@ export default function ExaminerStudioPage() {
     };
 
     registerCustomExam(paperPayload);
-
-    // Save in localStorage for persistent client fallback across server reloads
-    try {
-      const existing = JSON.parse(localStorage.getItem('aegis_custom_exams') || '[]');
-      localStorage.setItem('aegis_custom_exams', JSON.stringify([...existing, paperPayload]));
-    } catch (err) {
-      console.error(err);
-    }
+    publishExamPaper(paperPayload);
 
     const fullUrl = `${window.location.origin}/public-test/${token}`;
     setCreatedExamResult({
@@ -200,7 +198,7 @@ export default function ExaminerStudioPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 p-6 md:p-10 max-w-6xl mx-auto space-y-8">
+    <main className="min-h-screen bg-slate-950 p-6 md:p-10 max-w-6xl mx-auto space-y-8 text-slate-100">
       {/* Header */}
       <header className="flex items-center justify-between pb-6 border-b border-slate-800">
         <div className="flex items-center gap-3">
@@ -208,8 +206,13 @@ export default function ExaminerStudioPage() {
             <Building2 className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Examiner & Recruiter Studio</h1>
-            <p className="text-xs font-mono text-slate-400">Custom Test Creation & Shareable Invite Link Generator</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-white">Examiner Studio</h1>
+              <span className="px-2 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-400 font-mono text-[10px] uppercase font-bold">
+                Admin Module
+              </span>
+            </div>
+            <p className="text-xs font-mono text-slate-400">Custom Test Paper Creation & Direct Invite Link Generator</p>
           </div>
         </div>
 
@@ -218,18 +221,18 @@ export default function ExaminerStudioPage() {
             onClick={handleLockSession}
             className="flex items-center gap-2 px-3.5 py-2 bg-red-950/40 border border-red-500/30 hover:border-red-400 text-red-300 font-mono text-xs rounded-xl transition"
           >
-            <Lock className="w-3.5 h-3.5 text-red-400" /> Lock Studio
+            <Lock className="w-3.5 h-3.5 text-red-400" /> Lock Session
           </button>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/admin')}
             className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 font-mono text-xs rounded-xl transition"
           >
-            <ArrowLeft className="w-4 h-4" /> Candidate Portal
+            <ArrowLeft className="w-4 h-4" /> Admin Control Desk
           </button>
         </div>
       </header>
 
-      {/* Generated Success Modal Banner */}
+      {/* Generated Success Banner */}
       {createdExamResult && (
         <div className="glass-panel-glow p-6 rounded-3xl border border-emerald-500/40 bg-emerald-950/20 space-y-4 animate-in fade-in zoom-in duration-200">
           <div className="flex items-center justify-between">
@@ -367,11 +370,11 @@ export default function ExaminerStudioPage() {
           </div>
         </div>
 
-        {/* Proctoring Policy Profile & Custom Toggles */}
+        {/* Proctoring Policy Preset & Custom Toggles */}
         <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-teal-400" /> Proctoring & Security Preset Profiles
+              <Sliders className="w-4 h-4 text-teal-400" /> Security & Proctoring Presets
             </h3>
           </div>
 
@@ -425,7 +428,6 @@ export default function ExaminerStudioPage() {
             </div>
           </div>
 
-          {/* Individual Security Toggles & Mic Environment selector */}
           <div className="pt-3 space-y-3 border-t border-slate-800 font-mono text-xs">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
@@ -468,71 +470,6 @@ export default function ExaminerStudioPage() {
                 />
                 Fullscreen Lockdown
               </label>
-            </div>
-
-            {/* Dedicated Proctor Command Center Policy Hub Section */}
-            <div className="p-4 bg-slate-950 rounded-2xl border border-teal-500/30 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="font-bold text-teal-300 text-xs flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-teal-400" /> PROCTOR SURVEILLANCE & COMMAND HUB MODULES
-                </div>
-                <span className="text-[10px] font-mono text-slate-400">Institutional Exam Convenience Policy</span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-300">
-                <label className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2 cursor-pointer hover:border-slate-700">
-                  <input type="checkbox" defaultChecked className="accent-teal-500 w-4 h-4 rounded" />
-                  <div>
-                    <strong className="text-white">Option A: Incident Snapshots</strong>
-                    <div className="text-[10px] text-slate-400">Capture & inspect visual webcam frames on violations</div>
-                  </div>
-                </label>
-
-                <label className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2 cursor-pointer hover:border-slate-700">
-                  <input type="checkbox" defaultChecked className="accent-teal-500 w-4 h-4 rounded" />
-                  <div>
-                    <strong className="text-white">Option B: Remote Action Suite</strong>
-                    <div className="text-[10px] text-slate-400">Allow remote warnings, biometric checks, & dismissals</div>
-                  </div>
-                </label>
-
-                <label className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2 cursor-pointer hover:border-slate-700">
-                  <input type="checkbox" defaultChecked className="accent-teal-500 w-4 h-4 rounded" />
-                  <div>
-                    <strong className="text-white">Option C: Threat Risk Badges</strong>
-                    <div className="text-[10px] text-slate-400">Enable Low/Elevated/High risk AI badges & telemetry</div>
-                  </div>
-                </label>
-
-                <label className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2 cursor-pointer hover:border-slate-700">
-                  <input type="checkbox" defaultChecked className="accent-teal-500 w-4 h-4 rounded" />
-                  <div>
-                    <strong className="text-white">Option D: 2x2 Surveillance Grid</strong>
-                    <div className="text-[10px] text-slate-400">Allow proctors to monitor 4 candidates simultaneously</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            {/* Microphone Environment Noise Sensitivity selector */}
-            <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="font-bold text-slate-200 text-xs">Microphone Noise Environment Setting</div>
-                <div className="text-[10px] text-slate-400">Select threshold to prevent false alerts during 30-50 student hall exams</div>
-              </div>
-
-              <select
-                value={audioEnvironmentMode}
-                onChange={(e) => {
-                  setAudioEnvironmentMode(e.target.value);
-                  setEnableAudioAnalyzer(e.target.value !== 'DISABLED');
-                }}
-                className="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-teal-300 focus:outline-none focus:border-teal-500"
-              >
-                <option value="QUIET_ROOM">🤫 Quiet Room (High Sensitivity - 65 dB Threshold)</option>
-                <option value="CLASSROOM_LAB_MODE">🏫 Multi-Student Classroom / Lab Hall (Relaxed Sensitivity - 85 dB Threshold)</option>
-                <option value="DISABLED">🚫 Disabled (No Mic Required — Ideal for 30-50 Student Exam Halls)</option>
-              </select>
             </div>
           </div>
         </div>
@@ -579,7 +516,7 @@ export default function ExaminerStudioPage() {
             <Upload className="w-12 h-12 text-teal-400 mx-auto" />
             <h3 className="text-base font-bold text-white">Upload Question Paper Spreadsheet</h3>
             <p className="text-xs text-slate-400 font-mono max-w-md mx-auto">
-              Drag and drop an Excel (`.xlsx`) or CSV template containing columns: `QuestionText`, `OptionA`, `OptionB`, `OptionC`, `OptionD`, `CorrectOption`, `Explanation`.
+              Drag and drop an Excel (`.xlsx`) or CSV template containing question data.
             </p>
             <input type="file" accept=".xlsx,.csv" className="hidden" id="excel-file-input" />
             <label

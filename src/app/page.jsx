@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Shield, Lock, Eye, Mic, Award, ArrowRight, UserCheck, Activity, Monitor, KeyRound, Building2, PlusCircle, Search, Loader2 } from 'lucide-react';
 import { MOCK_TESTS } from '@/lib/mockData';
@@ -9,11 +9,9 @@ import { AuthGateModal } from '@/components/security/AuthGateModal';
 export default function CandidatePortal() {
   const router = useRouter();
 
+  const [mounted, setMounted] = useState(false);
   // Route Navigation Loading State
-  const [navigatingRoute, setNavigatingRoute] = useState(null); // '/examiner' | '/proctor' | '/unlock' | '/diagnostic'
-
-  // Security Auth Gate Modal State
-  const [activeAuthGate, setActiveAuthGate] = useState(null); // null | 'EXAMINER' | 'PROCTOR'
+  const [navigatingRoute, setNavigatingRoute] = useState(null); // '/unlock' | '/diagnostic'
 
   // Dual Access Bar State
   const [accessCodeInput, setAccessCodeInput] = useState('');
@@ -24,38 +22,11 @@ export default function CandidatePortal() {
   const [rollNo, setRollNo] = useState('2026-AEGIS-901');
   const [selectedTestId, setSelectedTestId] = useState(MOCK_TESTS[0].id);
 
-  const handleNavigate = (targetPath, labelKey) => {
-    setNavigatingRoute(labelKey);
-    router.push(targetPath);
-  };
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const handleExaminerClick = () => {
-    if (typeof window !== 'undefined' && sessionStorage.getItem('aegis_examiner_authed') === 'true') {
-      handleNavigate('/examiner', '/examiner');
-    } else {
-      setActiveAuthGate('EXAMINER');
-    }
-  };
-
-  const handleProctorClick = () => {
-    if (typeof window !== 'undefined' && sessionStorage.getItem('aegis_proctor_authed') === 'true') {
-      handleNavigate('/proctor', '/proctor');
-    } else {
-      setActiveAuthGate('PROCTOR');
-    }
-  };
-
-  const handleAuthGateSuccess = () => {
-    if (activeAuthGate === 'EXAMINER') {
-      sessionStorage.setItem('aegis_examiner_authed', 'true');
-      setActiveAuthGate(null);
-      handleNavigate('/examiner', '/examiner');
-    } else if (activeAuthGate === 'PROCTOR') {
-      sessionStorage.setItem('aegis_proctor_authed', 'true');
-      setActiveAuthGate(null);
-      handleNavigate('/proctor', '/proctor');
-    }
-  };
+  if (!mounted) return null;
 
   const handleAccessCodeSubmit = (e) => {
     e.preventDefault();
@@ -83,29 +54,6 @@ export default function CandidatePortal() {
 
   return (
     <main suppressHydrationWarning className="min-h-screen radar-grid flex flex-col justify-between p-6 md:p-12 relative overflow-hidden">
-      {/* Active Auth Gate Modal Popup */}
-      {activeAuthGate === 'EXAMINER' && (
-        <AuthGateModal
-          roleTitle="Examiner Studio Gateway"
-          roleSubtitle="Authorized access only. Enter Super-Admin security key to configure assessment papers."
-          expectedPin="9999"
-          defaultHint="9999"
-          onAuthenticate={handleAuthGateSuccess}
-          onClose={() => setActiveAuthGate(null)}
-        />
-      )}
-
-      {activeAuthGate === 'PROCTOR' && (
-        <AuthGateModal
-          roleTitle="Proctor Command Desk Gateway"
-          roleSubtitle="Security personnel authorization required. Enter Super-Admin security key to monitor live candidate feeds."
-          expectedPin="9999"
-          defaultHint="9999"
-          onAuthenticate={handleAuthGateSuccess}
-          onClose={() => setActiveAuthGate(null)}
-        />
-      )}
-
       {/* Glow Orbs */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -118,43 +66,17 @@ export default function CandidatePortal() {
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-wider text-white">MINDORA <span className="text-teal-400">AEGIS</span></h1>
-            <p className="text-xs font-mono text-slate-400">Universal Online Examination Suite</p>
+            <p className="text-xs font-mono text-slate-400">Candidate Online Examination Portal</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleExaminerClick}
-            disabled={!!navigatingRoute}
-            suppressHydrationWarning
-            className="flex items-center gap-2 px-4 py-2.5 bg-teal-950/60 border border-teal-500/40 hover:border-teal-400 active:scale-95 text-teal-300 rounded-xl font-mono text-xs transition-all duration-150 shadow-lg disabled:opacity-70"
+          <a
+            href="/admin"
+            className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 hover:border-slate-700 active:scale-95 text-slate-300 rounded-xl font-mono text-xs transition-all duration-150 shadow-lg"
           >
-            {navigatingRoute === '/examiner' ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-teal-300" /> Launching Examiner Gateway...
-              </>
-            ) : (
-              <>
-                <PlusCircle className="w-4 h-4 text-teal-400" /> Examiner Studio (Create Paper)
-              </>
-            )}
-          </button>
-          <button
-            onClick={handleProctorClick}
-            disabled={!!navigatingRoute}
-            suppressHydrationWarning
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 active:scale-95 text-slate-300 rounded-xl font-mono text-xs transition-all duration-150 shadow-lg disabled:opacity-70"
-          >
-            {navigatingRoute === '/proctor' ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-teal-300" /> Opening Proctor Desk...
-              </>
-            ) : (
-              <>
-                <Monitor className="w-4 h-4 text-teal-400" /> Proctor Desk Portal
-              </>
-            )}
-          </button>
+            <Lock className="w-3.5 h-3.5 text-teal-400" /> Staff & Examiner Gateway
+          </a>
         </div>
       </header>
 

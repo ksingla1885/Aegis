@@ -24,41 +24,46 @@ import {
   Activity,
   AlertTriangle
 } from 'lucide-react';
-import { MOCK_TESTS } from '@/lib/mockData';
 import { AuthGateModal } from '@/components/security/AuthGateModal';
 
 export default function ProctorDeskPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   React.useEffect(() => {
+    setMounted(true);
     if (typeof window !== 'undefined') {
-      const isAuthed = sessionStorage.getItem('aegis_proctor_authed') === 'true';
+      const isAuthed = sessionStorage.getItem('aegis_proctor_authed') === 'true' ||
+                       sessionStorage.getItem('aegis_admin_authed') === 'true';
       setIsAuthenticated(isAuthed);
     }
   }, []);
 
+  if (!mounted) return null;
+
   const handleAuthenticate = () => {
     sessionStorage.setItem('aegis_proctor_authed', 'true');
+    sessionStorage.setItem('aegis_admin_authed', 'true');
     setIsAuthenticated(true);
   };
 
   const handleLockDesk = () => {
     sessionStorage.removeItem('aegis_proctor_authed');
+    sessionStorage.removeItem('aegis_admin_authed');
     setIsAuthenticated(false);
   };
 
-  // Command Center Feature Toggles (Convenience Panel)
+  // Command Center Feature Toggles
   const [featureToggles, setFeatureToggles] = useState({
-    enableSnapshots: true, // Option A: Violation Snapshots
-    enableRemoteActions: true, // Option B: Remote Action Suite
-    enableRiskBadges: true, // Option C: Risk Classifier
-    enableMultiGrid: true, // Option D: 2x2 Surveillance Grid
+    enableSnapshots: true,
+    enableRemoteActions: true,
+    enableRiskBadges: true,
+    enableMultiGrid: true,
   });
 
-  const [showConfigDrawer, setShowConfigDrawer] = useState(false);
   const [viewMode, setViewMode] = useState('SINGLE'); // 'SINGLE' | 'GRID'
-  const [selectedSnapshot, setSelectedSnapshot] = useState(null); // Inspection Modal state
+  const [selectedSnapshot, setSelectedSnapshot] = useState(null);
 
   const [activeCandidates, setActiveCandidates] = useState([
     {
@@ -159,7 +164,6 @@ export default function ProctorDeskPage() {
     setTimeout(() => setActionNotice(null), 3000);
   };
 
-  // Option B Actions:
   const handleSendWarning = (e, cand = selectedCandidate) => {
     if (e) e.preventDefault();
     if (!warningMessage.trim() && !e) return;
@@ -197,7 +201,7 @@ export default function ProctorDeskPage() {
       });
     }
     setSelectedSnapshot(null);
-    showNotice('False positive violation dismissed and counter decremented.');
+    showNotice('False positive violation dismissed.');
   };
 
   const handleForceTerminate = (candId) => {
@@ -210,7 +214,6 @@ export default function ProctorDeskPage() {
     }
   };
 
-  // Option C: Helper to compute Risk Level
   const getRiskLevel = (cand) => {
     if (cand.status === 'TERMINATED') return { label: 'TERMINATED', color: 'bg-red-950 text-red-400 border-red-500/40' };
     if (cand.violationsCount >= 2 || !cand.isFullscreen || cand.faceStatus === 'NO_FACE') {
@@ -235,15 +238,15 @@ export default function ProctorDeskPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 p-6 md:p-10 flex flex-col justify-between max-w-7xl mx-auto space-y-6 select-none">
-      {/* Action Notification Toast */}
+    <main className="min-h-screen bg-slate-950 p-6 md:p-10 flex flex-col justify-between max-w-7xl mx-auto space-y-6 select-none text-slate-100">
+      {/* Toast */}
       {actionNotice && (
         <div className="fixed top-5 right-5 z-[10000] p-4 rounded-2xl bg-teal-950 border border-teal-500 text-teal-200 text-xs font-mono shadow-2xl flex items-center gap-2 animate-in slide-in-from-top duration-200">
           <Zap className="w-4 h-4 text-teal-400 animate-bounce" /> {actionNotice}
         </div>
       )}
 
-      {/* Option A: High-Resolution Snapshot Inspection Modal */}
+      {/* Snapshot Inspection Modal */}
       {selectedSnapshot && (
         <div className="fixed inset-0 z-[20000] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4">
           <div className="glass-panel p-6 rounded-3xl max-w-lg w-full border border-teal-500/40 bg-slate-900/95 shadow-2xl relative space-y-4">
@@ -267,9 +270,6 @@ export default function ProctorDeskPage() {
               <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-red-500/90 text-white font-mono text-[10px] font-bold shadow">
                 AI DETECTED: {selectedSnapshot.violation.aiBoxLabel}
               </div>
-              <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-slate-950/80 text-slate-300 font-mono text-[10px]">
-                {selectedSnapshot.violation.timestamp}
-              </div>
             </div>
 
             <div className="space-y-1">
@@ -292,24 +292,28 @@ export default function ProctorDeskPage() {
       {/* Header Bar */}
       <header className="flex items-center justify-between pb-6 border-b border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 shadow-lg shadow-teal-500/10">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/10">
             <Monitor className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-wide">Proctor Desk Command Center</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-white tracking-wide">Proctor Command Desk</h1>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[10px] uppercase font-bold">
+                Admin Module
+              </span>
+            </div>
             <p className="text-xs font-mono text-slate-400">Live Examination Surveillance & Interactive Controls</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Option D: Multi-Grid Mode Switcher */}
           {featureToggles.enableMultiGrid && (
             <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1">
               <button
                 type="button"
                 onClick={() => setViewMode('SINGLE')}
                 className={`px-3 py-1 rounded-lg text-xs font-mono flex items-center gap-1.5 transition ${
-                  viewMode === 'SINGLE' ? 'bg-teal-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'
+                  viewMode === 'SINGLE' ? 'bg-emerald-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <Maximize2 className="w-3.5 h-3.5" /> Focus View
@@ -318,7 +322,7 @@ export default function ProctorDeskPage() {
                 type="button"
                 onClick={() => setViewMode('GRID')}
                 className={`px-3 py-1 rounded-lg text-xs font-mono flex items-center gap-1.5 transition ${
-                  viewMode === 'GRID' ? 'bg-teal-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'
+                  viewMode === 'GRID' ? 'bg-emerald-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <Grid className="w-3.5 h-3.5" /> 2x2 Grid View
@@ -331,159 +335,20 @@ export default function ProctorDeskPage() {
             onClick={handleLockDesk}
             className="flex items-center gap-2 px-3.5 py-2 bg-red-950/40 border border-red-500/30 hover:border-red-400 text-red-300 font-mono text-xs rounded-xl transition"
           >
-            <Lock className="w-3.5 h-3.5 text-red-400" /> Lock Desk
+            <Lock className="w-3.5 h-3.5 text-red-400" /> Lock Session
           </button>
           <button
             type="button"
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/admin')}
             className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 font-mono text-xs rounded-xl transition"
           >
-            <ArrowLeft className="w-4 h-4" /> Portal
+            <ArrowLeft className="w-4 h-4" /> Admin Control Desk
           </button>
         </div>
       </header>
 
-      {/* Dedicated Proctor Command Hub & Feature Control Center Section */}
-      <section className="glass-panel p-6 rounded-3xl border border-teal-500/30 bg-slate-900/90 shadow-2xl space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
-              <Sliders className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white tracking-wide">PROCTOR COMMAND HUB & SURVEILLANCE MODULE CONTROL</h2>
-              <p className="text-xs font-mono text-slate-400">Enable or disable monitoring modules according to your institutional convenience</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 font-mono text-xs text-teal-400 bg-teal-950/60 px-3 py-1.5 rounded-xl border border-teal-500/30">
-            <Activity className="w-4 h-4 animate-pulse" /> Active Modules: {Object.values(featureToggles).filter(Boolean).length} / 4
-          </div>
-        </div>
-
-        {/* 4 Feature Control Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Feature 1: Option A */}
-          <div
-            onClick={() => setFeatureToggles((prev) => ({ ...prev, enableSnapshots: !prev.enableSnapshots }))}
-            className={`p-4 rounded-2xl border cursor-pointer transition flex flex-col justify-between space-y-3 ${
-              featureToggles.enableSnapshots
-                ? 'bg-teal-950/40 border-teal-500 text-white shadow-lg'
-                : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs uppercase tracking-wider font-mono flex items-center gap-1.5">
-                <Camera className="w-4 h-4 text-teal-400" /> Option A
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
-                featureToggles.enableSnapshots
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-slate-800 text-slate-500 border-slate-700'
-              }`}>
-                {featureToggles.enableSnapshots ? 'ENABLED ✓' : 'DISABLED ✗'}
-              </span>
-            </div>
-            <div>
-              <div className="font-bold text-sm text-slate-100">Incident Snapshots</div>
-              <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                Captures timestamped webcam frames on security violations with click-to-enlarge inspection.
-              </p>
-            </div>
-          </div>
-
-          {/* Feature 2: Option B */}
-          <div
-            onClick={() => setFeatureToggles((prev) => ({ ...prev, enableRemoteActions: !prev.enableRemoteActions }))}
-            className={`p-4 rounded-2xl border cursor-pointer transition flex flex-col justify-between space-y-3 ${
-              featureToggles.enableRemoteActions
-                ? 'bg-teal-950/40 border-teal-500 text-white shadow-lg'
-                : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs uppercase tracking-wider font-mono flex items-center gap-1.5">
-                <Send className="w-4 h-4 text-teal-400" /> Option B
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
-                featureToggles.enableRemoteActions
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-slate-800 text-slate-500 border-slate-700'
-              }`}>
-                {featureToggles.enableRemoteActions ? 'ENABLED ✓' : 'DISABLED ✗'}
-              </span>
-            </div>
-            <div>
-              <div className="font-bold text-sm text-slate-100">Remote Action Suite</div>
-              <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                Broadcast candidate warnings, force biometric re-checks, dismiss false alerts, & terminate sessions.
-              </p>
-            </div>
-          </div>
-
-          {/* Feature 3: Option C */}
-          <div
-            onClick={() => setFeatureToggles((prev) => ({ ...prev, enableRiskBadges: !prev.enableRiskBadges }))}
-            className={`p-4 rounded-2xl border cursor-pointer transition flex flex-col justify-between space-y-3 ${
-              featureToggles.enableRiskBadges
-                ? 'bg-teal-950/40 border-teal-500 text-white shadow-lg'
-                : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs uppercase tracking-wider font-mono flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 text-teal-400" /> Option C
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
-                featureToggles.enableRiskBadges
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-slate-800 text-slate-500 border-slate-700'
-              }`}>
-                {featureToggles.enableRiskBadges ? 'ENABLED ✓' : 'DISABLED ✗'}
-              </span>
-            </div>
-            <div>
-              <div className="font-bold text-sm text-slate-100">Security Risk Classifier</div>
-              <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                Automated Low / Elevated / High Risk AI threat badges with live audio dB & FPS telemetry.
-              </p>
-            </div>
-          </div>
-
-          {/* Feature 4: Option D */}
-          <div
-            onClick={() => setFeatureToggles((prev) => ({ ...prev, enableMultiGrid: !prev.enableMultiGrid }))}
-            className={`p-4 rounded-2xl border cursor-pointer transition flex flex-col justify-between space-y-3 ${
-              featureToggles.enableMultiGrid
-                ? 'bg-teal-950/40 border-teal-500 text-white shadow-lg'
-                : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs uppercase tracking-wider font-mono flex items-center gap-1.5">
-                <Grid className="w-4 h-4 text-teal-400" /> Option D
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
-                featureToggles.enableMultiGrid
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-slate-800 text-slate-500 border-slate-700'
-              }`}>
-                {featureToggles.enableMultiGrid ? 'ENABLED ✓' : 'DISABLED ✗'}
-              </span>
-            </div>
-            <div>
-              <div className="font-bold text-sm text-slate-100">2x2 Multi-Grid View</div>
-              <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                Switches between single-candidate focus inspection and a 2x2 multi-feed surveillance grid.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content Area */}
+      {/* Main Grid Content */}
       {viewMode === 'GRID' && featureToggles.enableMultiGrid ? (
-        /* Option D: 2x2 Multi-Candidate Surveillance Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {activeCandidates.map((cand) => {
             const risk = getRiskLevel(cand);
@@ -502,21 +367,15 @@ export default function ProctorDeskPage() {
                   )}
                 </div>
 
-                {/* Live Video Canvas Stream */}
                 <div className="relative aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
                   <div className="absolute inset-0 radar-grid opacity-40"></div>
                   <div className="relative z-10 text-center space-y-1">
-                    <Eye className="w-8 h-8 text-teal-400 mx-auto animate-pulse" />
+                    <Eye className="w-8 h-8 text-emerald-400 mx-auto animate-pulse" />
                     <div className="text-xs font-mono text-white">LIVE CANDIDATE TELEMETRY</div>
                     <div className="text-[10px] font-mono text-emerald-400">{cand.faceStatus}</div>
                   </div>
-
-                  <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-slate-900/80 text-[10px] font-mono text-slate-300">
-                    Audio: {cand.audioLevel} • FPS: {cand.fps}
-                  </div>
                 </div>
 
-                {/* Option B: Quick Action Suite */}
                 {featureToggles.enableRemoteActions && (
                   <div className="flex items-center gap-2 pt-1">
                     <button
@@ -528,7 +387,7 @@ export default function ProctorDeskPage() {
 
                     <button
                       onClick={() => handleForceBiometricCheck(cand.id)}
-                      className="py-2 px-3 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-300 font-mono text-[11px] rounded-xl transition flex items-center gap-1"
+                      className="py-2 px-3 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-mono text-[11px] rounded-xl transition flex items-center gap-1"
                     >
                       <Camera className="w-3.5 h-3.5" /> Re-Verify
                     </button>
@@ -539,13 +398,12 @@ export default function ProctorDeskPage() {
           })}
         </div>
       ) : (
-        /* Standard Single Candidate Focus View */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Roster Column */}
+          {/* Roster Column */}
           <div className="lg:col-span-4 space-y-4">
             <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-semibold text-white uppercase tracking-wider">
-                <Users className="w-4 h-4 text-teal-400" /> Active Roster ({activeCandidates.length})
+                <Users className="w-4 h-4 text-emerald-400" /> Active Candidate Roster ({activeCandidates.length})
               </div>
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
             </div>
@@ -559,7 +417,7 @@ export default function ProctorDeskPage() {
                     onClick={() => setSelectedCandidate(cand)}
                     className={`p-4 rounded-2xl border cursor-pointer transition ${
                       selectedCandidate.id === cand.id
-                        ? 'bg-teal-950/40 border-teal-500 text-white shadow-lg'
+                        ? 'bg-emerald-950/40 border-emerald-500 text-white shadow-lg'
                         : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
                     }`}
                   >
@@ -576,17 +434,13 @@ export default function ProctorDeskPage() {
                       )}
                     </div>
                     <div className="text-xs font-mono text-slate-400">{cand.rollNo}</div>
-                    <div className="mt-2 text-[11px] font-mono flex items-center justify-between text-slate-400 border-t border-slate-800/80 pt-2">
-                      <span>Violations: {cand.violationsCount}</span>
-                      <span>Audio: {cand.audioLevel}</span>
-                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Right Selected Focus Column */}
+          {/* Selected Focus Column */}
           <div className="lg:col-span-8 space-y-6">
             <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
@@ -599,17 +453,16 @@ export default function ProctorDeskPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs font-mono text-teal-400 mt-0.5">
+                  <p className="text-xs font-mono text-emerald-400 mt-0.5">
                     {selectedCandidate.rollNo} • {selectedCandidate.testTitle}
                   </p>
                 </div>
 
-                {/* Option B: Action Controls */}
                 {featureToggles.enableRemoteActions && (
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleForceBiometricCheck(selectedCandidate.id)}
-                      className="px-3.5 py-2 bg-teal-500/10 border border-teal-500/30 hover:bg-teal-500/20 text-teal-300 font-mono text-xs rounded-xl transition flex items-center gap-1.5"
+                      className="px-3.5 py-2 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-300 font-mono text-xs rounded-xl transition flex items-center gap-1.5"
                     >
                       <Camera className="w-4 h-4" /> Force Biometric Check
                     </button>
@@ -625,55 +478,43 @@ export default function ProctorDeskPage() {
                 )}
               </div>
 
-              {/* Simulated Live Video Canvas */}
+              {/* Video Canvas Stream */}
               <div className="relative aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
                 <div className="absolute inset-0 radar-grid opacity-50"></div>
                 <div className="relative z-10 text-center space-y-2">
-                  <Eye className="w-12 h-12 text-teal-400 mx-auto animate-pulse" />
+                  <Eye className="w-12 h-12 text-emerald-400 mx-auto animate-pulse" />
                   <div className="text-sm font-mono text-white tracking-wider">LIVE AI WEBCAM TELEMETRY STREAM</div>
                   <div className="text-xs font-mono text-emerald-400">FACE POSE: {selectedCandidate.faceStatus}</div>
-                </div>
-
-                <div className="absolute bottom-3 left-3 px-3 py-1 rounded-xl bg-slate-900/90 text-xs font-mono text-slate-300 border border-slate-800 flex items-center gap-3">
-                  <span>Audio: <strong className="text-teal-400">{selectedCandidate.audioLevel}</strong></span>
-                  <span>FPS: <strong className="text-emerald-400">{selectedCandidate.fps}</strong></span>
-                  <span>Fullscreen: <strong className={selectedCandidate.isFullscreen ? 'text-emerald-400' : 'text-red-400'}>{selectedCandidate.isFullscreen ? 'ACTIVE ✓' : 'EXITED ✗'}</strong></span>
                 </div>
               </div>
             </div>
 
-            {/* Warning Broadcast Form & Option A Incident Gallery */}
+            {/* Warning Broadcast Form & Incident Gallery */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Option B: Warning Broadcast Form */}
-              {featureToggles.enableRemoteActions ? (
+              {featureToggles.enableRemoteActions && (
                 <form onSubmit={handleSendWarning} className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
                   <h4 className="text-xs font-mono text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                    <Send className="w-4 h-4 text-teal-400" /> Broadcast Remote Warning Popup
+                    <Send className="w-4 h-4 text-emerald-400" /> Broadcast Remote Warning Popup
                   </h4>
                   <textarea
                     rows={3}
                     value={warningMessage}
                     onChange={(e) => setWarningMessage(e.target.value)}
                     placeholder="Enter custom warning to pop up on candidate screen..."
-                    className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-teal-500"
+                    className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
                   />
                   <button
                     type="submit"
-                    className="w-full py-2.5 bg-teal-600 hover:bg-teal-500 active:scale-95 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition"
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition"
                   >
                     <Send className="w-4 h-4" /> Send Warning Notification
                   </button>
                 </form>
-              ) : (
-                <div className="glass-panel p-6 rounded-3xl border border-slate-800 text-xs font-mono text-slate-500 flex items-center justify-center">
-                  Remote Action Controls disabled in Feature Toggle Bar.
-                </div>
               )}
 
-              {/* Option A: Candidate Incident History & Snapshot Gallery */}
               <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-3">
                 <h4 className="text-xs font-mono text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-teal-400" /> Violation Timeline & Snapshots
+                  <Camera className="w-4 h-4 text-emerald-400" /> Violation Timeline & Snapshots
                 </h4>
                 {selectedCandidate.violations.length === 0 ? (
                   <div className="text-xs font-mono text-slate-500 py-6 text-center">
@@ -685,30 +526,8 @@ export default function ProctorDeskPage() {
                       <div key={v.id} className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-xs font-mono space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-amber-400 font-bold">[{v.timestamp}] {v.type}</span>
-                          {featureToggles.enableRemoteActions && (
-                            <button
-                              type="button"
-                              onClick={() => handleDismissViolation(selectedCandidate.id, v.id)}
-                              className="text-[10px] text-emerald-400 hover:underline"
-                            >
-                              Dismiss False Positive
-                            </button>
-                          )}
                         </div>
                         <div className="text-slate-300">{v.message}</div>
-
-                        {/* Option A Snapshot Frame Thumbnail */}
-                        {featureToggles.enableSnapshots && v.snapshotUrl && (
-                          <div
-                            onClick={() => setSelectedSnapshot({ candidate: selectedCandidate, violation: v })}
-                            className="relative aspect-video rounded-xl overflow-hidden border border-slate-800 cursor-pointer hover:border-teal-500 transition group"
-                          >
-                            <img src={v.snapshotUrl} alt="Snapshot" className="w-full h-full object-cover group-hover:scale-105 transition" />
-                            <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                              <span className="px-2 py-1 bg-teal-600 text-white rounded text-[10px] font-bold">Inspect Frame</span>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
