@@ -1,5 +1,6 @@
 import { MOCK_TESTS, findExamByTokenOrId } from '@/lib/mockData';
 import { generateCandidateHash } from '@/lib/crypto';
+import { getDatabase } from '@/lib/mongodb';
 
 export async function POST(request, { params }) {
   try {
@@ -99,6 +100,14 @@ export async function POST(request, { params }) {
       submittedAt: new Date().toISOString(),
       breakdown,
     };
+
+    // Save candidate attempt result to MongoDB
+    try {
+      const db = await getDatabase();
+      await db.collection('attempts').insertOne(resultPayload);
+    } catch (dbErr) {
+      console.error('MongoDB Attempt Insertion Warning:', dbErr);
+    }
 
     return Response.json({
       success: true,

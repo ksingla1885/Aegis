@@ -1,5 +1,6 @@
 import { getSanitizedTestPayload, registerCustomExam } from '@/lib/mockData';
 import { decodePaperPayload } from '@/lib/examService';
+import { getDatabase } from '@/lib/mongodb';
 
 export async function GET(request, { params }) {
   try {
@@ -13,6 +14,24 @@ export async function GET(request, { params }) {
       if (decoded && (decoded.id || decoded.token)) {
         registerCustomExam(decoded);
       }
+    }
+
+    // Query MongoDB for published exam by testId
+    try {
+      const db = await getDatabase();
+      const queryStr = (testId || '').trim();
+      const dbExam = await db.collection('exams').findOne({
+        $or: [
+          { id: queryStr.toLowerCase() },
+          { token: { $regex: new RegExp(`^${queryStr}$`, 'i') } },
+          { code: { $regex: new RegExp(`^${queryStr}$`, 'i') } }
+        ]
+      });
+      if (dbExam) {
+        registerCustomExam(dbExam);
+      }
+    } catch (dbErr) {
+      console.error('MongoDB Test Fetch Warning:', dbErr);
     }
 
     const sanitizedTest = getSanitizedTestPayload(testId);
