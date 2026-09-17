@@ -1,8 +1,20 @@
-import { findExamByTokenOrId, getSanitizedTestPayload } from '@/lib/mockData';
+import { findExamByTokenOrId, getSanitizedTestPayload, registerCustomExam } from '@/lib/mockData';
+import { decodePaperPayload } from '@/lib/examService';
 
 export async function GET(request, { params }) {
   try {
     const { token } = await params;
+
+    // Check if stateless payload parameter ?p= is present in URL
+    const url = new URL(request.url);
+    const payloadParam = url.searchParams.get('p');
+    if (payloadParam) {
+      const decoded = decodePaperPayload(payloadParam);
+      if (decoded && (decoded.id || decoded.token)) {
+        registerCustomExam(decoded);
+      }
+    }
+
     const sanitizedTest = getSanitizedTestPayload(token);
 
     if (!sanitizedTest) {

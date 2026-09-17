@@ -24,7 +24,12 @@ function PublicTestContent({ params }) {
   useEffect(() => {
     async function verifyToken() {
       try {
-        const res = await fetch(`/api/invite/${token}`);
+        const payloadParam = searchParams.get('p');
+        const fetchUrl = payloadParam
+          ? `/api/invite/${token}?p=${encodeURIComponent(payloadParam)}`
+          : `/api/invite/${token}`;
+
+        const res = await fetch(fetchUrl);
         const data = await res.json();
 
         if (data.success) {
@@ -57,7 +62,7 @@ function PublicTestContent({ params }) {
     }
 
     verifyToken();
-  }, [token]);
+  }, [token, searchParams]);
 
   // Countdown Lobby Timer Effect
   useEffect(() => {
@@ -98,7 +103,12 @@ function PublicTestContent({ params }) {
     sessionStorage.setItem('aegis_candidate_email', candidateEmail.trim());
     sessionStorage.setItem('aegis_target_test', test.id);
 
-    router.push(`/system-check?testId=${test.id}`);
+    const payloadParam = searchParams.get('p');
+    const targetUrl = payloadParam
+      ? `/system-check?testId=${test.id}&p=${encodeURIComponent(payloadParam)}`
+      : `/system-check?testId=${test.id}`;
+
+    router.push(targetUrl);
   };
 
   const formatLobbyTime = (totalSecs) => {

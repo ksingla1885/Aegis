@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, Shield, Plus, Upload, CheckCircle2, Copy, Sparkles, Sliders, FileText, ArrowLeft, Globe, Lock } from 'lucide-react';
 import { registerCustomExam } from '@/lib/mockData';
-import { publishExamPaper } from '@/lib/examService';
+import { publishExamPaper, encodePaperPayload } from '@/lib/examService';
 import { AuthGateModal } from '@/components/security/AuthGateModal';
 
 export default function ExaminerStudioPage() {
@@ -168,7 +168,8 @@ export default function ExaminerStudioPage() {
     registerCustomExam(paperPayload);
     await publishExamPaper(paperPayload);
 
-    const fullUrl = `${window.location.origin}/public-test/${token}`;
+    const encoded = encodePaperPayload(paperPayload);
+    const fullUrl = `${window.location.origin}/public-test/${token}?p=${encoded}`;
     setCreatedExamResult({
       token,
       url: fullUrl,

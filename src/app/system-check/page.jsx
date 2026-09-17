@@ -56,7 +56,11 @@ function SystemCheckContent() {
   const handleEnterExam = () => {
     if (!isAllChecksPassed || isEnteringExam) return;
     setIsEnteringExam(true);
-    router.push(`/exam/${test.id}`);
+    const pParam = searchParams.get('p');
+    const targetUrl = pParam
+      ? `/exam/${test.id}?p=${encodeURIComponent(pParam)}`
+      : `/exam/${test.id}`;
+    router.push(targetUrl);
   };
 
   return (

@@ -91,6 +91,41 @@ export async function publishExamPaper(paperPayload) {
 }
 
 /**
+ * Encode paper payload into a URL-safe stateless Base64 string
+ */
+export function encodePaperPayload(paperPayload) {
+  try {
+    const jsonStr = JSON.stringify(paperPayload);
+    if (typeof window !== 'undefined') {
+      return btoa(encodeURIComponent(jsonStr));
+    }
+    return Buffer.from(encodeURIComponent(jsonStr)).toString('base64');
+  } catch (err) {
+    console.error('Failed to encode paper payload:', err);
+    return '';
+  }
+}
+
+/**
+ * Decode paper payload from a URL-safe stateless Base64 string
+ */
+export function decodePaperPayload(encodedStr) {
+  if (!encodedStr) return null;
+  try {
+    let jsonStr = '';
+    if (typeof window !== 'undefined') {
+      jsonStr = decodeURIComponent(atob(encodedStr));
+    } else {
+      jsonStr = decodeURIComponent(Buffer.from(encodedStr, 'base64').toString('utf8'));
+    }
+    return JSON.parse(jsonStr);
+  } catch (err) {
+    console.error('Failed to decode paper payload:', err);
+    return null;
+  }
+}
+
+/**
  * Sync active candidate telemetry frame to Proctor Command Desk
  */
 export function syncCandidateProctorTelemetry(telemetryPayload) {

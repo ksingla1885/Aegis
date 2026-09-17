@@ -101,7 +101,12 @@ export default function ExamRunnerPage({ params }) {
 
     async function loadTestPayload() {
       try {
-        const res = await fetch(`/api/exam/${testId}`);
+        const pParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('p') : null;
+        const fetchUrl = pParam
+          ? `/api/exam/${testId}?p=${encodeURIComponent(pParam)}`
+          : `/api/exam/${testId}`;
+
+        const res = await fetch(fetchUrl);
         const data = await res.json();
 
         if (data.success) {
