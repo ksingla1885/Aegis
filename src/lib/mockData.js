@@ -259,12 +259,23 @@ export const MOCK_TESTS = [
 ];
 
 /**
- * Custom Paper Registry (stored in-memory for custom papers created via /examiner)
+ * Custom Paper Registry (stored in-memory on globalThis for serverless persistence)
  */
-export const CUSTOM_EXAM_REGISTRY = [];
+if (typeof globalThis !== 'undefined') {
+  globalThis.AEGIS_CUSTOM_EXAMS = globalThis.AEGIS_CUSTOM_EXAMS || [];
+}
 
 export function registerCustomExam(paperData) {
-  CUSTOM_EXAM_REGISTRY.push(paperData);
+  if (!paperData || !paperData.id) return;
+  const registry = (typeof globalThis !== 'undefined' && globalThis.AEGIS_CUSTOM_EXAMS) ? globalThis.AEGIS_CUSTOM_EXAMS : [];
+  const existingIdx = registry.findIndex(
+    (t) => t.id.toLowerCase() === paperData.id.toLowerCase()
+  );
+  if (existingIdx >= 0) {
+    registry[existingIdx] = paperData;
+  } else {
+    registry.push(paperData);
+  }
 }
 
 export function findExamByTokenOrId(tokenOrId) {
@@ -279,8 +290,9 @@ export function findExamByTokenOrId(tokenOrId) {
   );
   if (foundMock) return foundMock;
 
+  const registry = (typeof globalThis !== 'undefined' && globalThis.AEGIS_CUSTOM_EXAMS) ? globalThis.AEGIS_CUSTOM_EXAMS : [];
   return (
-    CUSTOM_EXAM_REGISTRY.find(
+    registry.find(
       (t) =>
         t.id.toLowerCase() === query ||
         (t.token && t.token.toLowerCase() === query) ||

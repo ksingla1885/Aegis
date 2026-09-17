@@ -67,13 +67,22 @@ export function getCandidatePaperPayload(testIdOrToken) {
 /**
  * Publish a new assessment paper from Examiner Studio
  */
-export function publishExamPaper(paperPayload) {
+export async function publishExamPaper(paperPayload) {
   if (typeof window === 'undefined') return false;
 
   try {
+    // 1. Save in local browser storage fallback
     const existing = JSON.parse(localStorage.getItem(CUSTOM_EXAMS_STORAGE_KEY) || '[]');
     const updated = [paperPayload, ...existing.filter(e => e.id !== paperPayload.id)];
     localStorage.setItem(CUSTOM_EXAMS_STORAGE_KEY, JSON.stringify(updated));
+
+    // 2. Publish to Aegis central server API globally so any candidate device can resolve token
+    await fetch('/api/exam/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(paperPayload),
+    });
+
     return true;
   } catch (err) {
     console.error('Failed to publish exam paper:', err);

@@ -132,7 +132,7 @@ export default function ExaminerStudioPage() {
     ]);
   };
 
-  const handleCreatePaper = (e) => {
+  const handleCreatePaper = async (e) => {
     e.preventDefault();
     const token = `AEGIS-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
@@ -166,7 +166,7 @@ export default function ExaminerStudioPage() {
     };
 
     registerCustomExam(paperPayload);
-    publishExamPaper(paperPayload);
+    await publishExamPaper(paperPayload);
 
     const fullUrl = `${window.location.origin}/public-test/${token}`;
     setCreatedExamResult({
