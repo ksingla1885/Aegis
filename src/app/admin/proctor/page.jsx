@@ -31,29 +31,6 @@ export default function ProctorDeskPage() {
   const [mounted, setMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  React.useEffect(() => {
-    setMounted(true);
-    if (typeof window !== 'undefined') {
-      const isAuthed = sessionStorage.getItem('aegis_proctor_authed') === 'true' ||
-                       sessionStorage.getItem('aegis_admin_authed') === 'true';
-      setIsAuthenticated(isAuthed);
-    }
-  }, []);
-
-  if (!mounted) return null;
-
-  const handleAuthenticate = () => {
-    sessionStorage.setItem('aegis_proctor_authed', 'true');
-    sessionStorage.setItem('aegis_admin_authed', 'true');
-    setIsAuthenticated(true);
-  };
-
-  const handleLockDesk = () => {
-    sessionStorage.removeItem('aegis_proctor_authed');
-    sessionStorage.removeItem('aegis_admin_authed');
-    setIsAuthenticated(false);
-  };
-
   // Command Center Feature Toggles
   const [featureToggles, setFeatureToggles] = useState({
     enableSnapshots: true,
@@ -158,6 +135,17 @@ export default function ProctorDeskPage() {
   const [selectedCandidate, setSelectedCandidate] = useState(activeCandidates[0]);
   const [warningMessage, setWarningMessage] = useState('');
   const [actionNotice, setActionNotice] = useState(null);
+
+  React.useEffect(() => {
+    setMounted(true);
+    if (typeof window !== 'undefined') {
+      const isAuthed = sessionStorage.getItem('aegis_proctor_authed') === 'true' ||
+                       sessionStorage.getItem('aegis_admin_authed') === 'true';
+      setIsAuthenticated(isAuthed);
+    }
+  }, []);
+
+  if (!mounted) return null;
 
   const showNotice = (msg) => {
     setActionNotice(msg);

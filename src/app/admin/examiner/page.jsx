@@ -13,29 +13,6 @@ export default function ExaminerStudioPage() {
   const [mounted, setMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  React.useEffect(() => {
-    setMounted(true);
-    if (typeof window !== 'undefined') {
-      const isAuthed = sessionStorage.getItem('aegis_examiner_authed') === 'true' ||
-                       sessionStorage.getItem('aegis_admin_authed') === 'true';
-      setIsAuthenticated(isAuthed);
-    }
-  }, []);
-
-  if (!mounted) return null;
-
-  const handleAuthenticate = () => {
-    sessionStorage.setItem('aegis_examiner_authed', 'true');
-    sessionStorage.setItem('aegis_admin_authed', 'true');
-    setIsAuthenticated(true);
-  };
-
-  const handleLockSession = () => {
-    sessionStorage.removeItem('aegis_examiner_authed');
-    sessionStorage.removeItem('aegis_admin_authed');
-    setIsAuthenticated(false);
-  };
-
   const [activeTab, setActiveTab] = useState('FORM'); // 'FORM' | 'EXCEL'
   const [testTitle, setTestTitle] = useState('Data Structures & Algorithms Final Midterm');
   const [organization, setOrganization] = useState('Stanford University — CS Dept');
@@ -74,8 +51,18 @@ export default function ExaminerStudioPage() {
   // Created Result State
   const [createdExamResult, setCreatedExamResult] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
-
   const [audioEnvironmentMode, setAudioEnvironmentMode] = useState('CLASSROOM_LAB_MODE'); // 'QUIET_ROOM' | 'CLASSROOM_LAB_MODE' | 'DISABLED'
+
+  React.useEffect(() => {
+    setMounted(true);
+    if (typeof window !== 'undefined') {
+      const isAuthed = sessionStorage.getItem('aegis_examiner_authed') === 'true' ||
+                       sessionStorage.getItem('aegis_admin_authed') === 'true';
+      setIsAuthenticated(isAuthed);
+    }
+  }, []);
+
+  if (!mounted) return null;
 
   // Apply Security Presets
   const handleApplyPreset = (profile) => {
