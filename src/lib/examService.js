@@ -132,12 +132,12 @@ export function syncCandidateProctorTelemetry(telemetryPayload) {
   if (typeof window === 'undefined') return;
 
   try {
-    const existing = JSON.parse(sessionStorage.getItem(PROCTOR_TELEMETRY_STORAGE_KEY) || '{}');
+    const existing = JSON.parse(localStorage.getItem(PROCTOR_TELEMETRY_STORAGE_KEY) || '{}');
     existing[telemetryPayload.candidateId || 'default'] = {
       ...telemetryPayload,
       updatedAt: new Date().toISOString()
     };
-    sessionStorage.setItem(PROCTOR_TELEMETRY_STORAGE_KEY, JSON.stringify(existing));
+    localStorage.setItem(PROCTOR_TELEMETRY_STORAGE_KEY, JSON.stringify(existing));
   } catch (err) {
     console.error('Failed to sync candidate proctor telemetry:', err);
   }

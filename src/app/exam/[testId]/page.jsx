@@ -15,6 +15,7 @@ import { QuestionViewer } from '@/components/exam/QuestionViewer';
 import { QuestionPalette } from '@/components/exam/QuestionPalette';
 import { ExitConfirmation } from '@/components/exam/ExitConfirmation';
 import { shuffleArrayWithSeed, encryptDraftPayload } from '@/lib/crypto';
+import { syncCandidateProctorTelemetry } from '@/lib/examService';
 import { ShieldCheck, Lock, Activity, Loader2, CheckCircle2 } from 'lucide-react';
 
 export default function ExamRunnerPage({ params }) {
@@ -195,6 +196,32 @@ export default function ExamRunnerPage({ params }) {
       }
     }
   }, [userAnswers, markedForReview, testId]);
+
+  // Proctor Telemetry Sync Effect
+  useEffect(() => {
+    if (isLoading || !test || isSubmitting) return;
+
+    const interval = setInterval(() => {
+      const payload = {
+        id: rollNo,
+        candidateId: rollNo,
+        name: candidateName,
+        rollNo: rollNo,
+        testTitle: test.title,
+        status: 'ACTIVE',
+        faceStatus: faceTracking.faceDetected ? (faceTracking.faceCount > 1 ? 'MULTIPLE_FACES' : faceTracking.orientation || 'VERIFIED_OK') : 'NO_FACE',
+        audioLevel: `${Math.round(audioAnomaly.decibels || 0)} dB`,
+        fps: 30,
+        isFullscreen: security.isFullscreen,
+        violationsCount: security.violationCount,
+        violations: security.violations || [],
+      };
+      
+      syncCandidateProctorTelemetry(payload);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isLoading, test, isSubmitting, candidateName, rollNo, faceTracking, audioAnomaly, security]);
 
   if (isLoading || !test) {
     return (

@@ -42,7 +42,7 @@ export default function ProctorDeskPage() {
   const [viewMode, setViewMode] = useState('SINGLE'); // 'SINGLE' | 'GRID'
   const [selectedSnapshot, setSelectedSnapshot] = useState(null);
 
-  const [activeCandidates, setActiveCandidates] = useState([
+const MOCK_CANDIDATES = [
     {
       id: 'cand-01',
       name: 'Ketan Singla',
@@ -130,7 +130,9 @@ export default function ProctorDeskPage() {
         }
       ]
     }
-  ]);
+  ];
+
+  const [activeCandidates, setActiveCandidates] = useState(MOCK_CANDIDATES);
 
   const [selectedCandidate, setSelectedCandidate] = useState(activeCandidates[0]);
   const [warningMessage, setWarningMessage] = useState('');
@@ -156,6 +158,32 @@ export default function ProctorDeskPage() {
       setIsAuthenticated(isAuthed);
     }
   }, []);
+
+  React.useEffect(() => {
+    if (!mounted || !isAuthenticated) return;
+    
+    const fetchLiveCandidates = () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem('aegis_active_proctor_telemetry') || '{}');
+        const live = Object.values(stored);
+        
+        if (live.length > 0) {
+          setActiveCandidates(live);
+          setSelectedCandidate(prev => {
+            if (!prev) return live[0];
+            const stillExists = live.find(c => c.id === prev.id);
+            return stillExists || live[0];
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching live candidates:', err);
+      }
+    };
+
+    fetchLiveCandidates();
+    const interval = setInterval(fetchLiveCandidates, 2000);
+    return () => clearInterval(interval);
+  }, [mounted, isAuthenticated]);
 
   if (!mounted) return null;
 
